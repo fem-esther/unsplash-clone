@@ -4,7 +4,7 @@
             <div class="relative w-full">
                 <input v-model="query" type="text"
                     class="shadow-sm bg-gray-50 border border-gray-300 text-[#46242E] placeholder:text-[#46242E80] text-sm rounded-lg focus:ring-primary-300 focus:border-primary-300 block w-full p-5 pl-12"
-                    placeholder="Search for photos" @keyup.enter="searchPhotos" />
+                    :placeholder="searchPlaceholder" @keyup.enter="searchPhotos" />
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[#46242E80]" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor">
@@ -25,41 +25,61 @@
             <p>{{ error }}</p>
         </div>
 
+        <!-- Display photos array for debugging -->
+        <div v-if="!loading && photos.length" class="hidden">
+            <pre>{{ photos }}</pre> <!-- Display raw photo data for debugging -->
+        </div>
+
         <!-- Grid of Cards -->
-        <div v-if="!loading && photos?.length"
+        <div v-if="!loading && photos.length"
             class="w-full grid grid-cols-3 gap-16 2xl:px-56 ld:px-28 md:px-16 px-6 relative -top-20">
-            <ImageCard v-for="(photo, index) in photos" :key="photo.id" :photo="photo" />
+            <ImageCard v-for="photo in photos" :key="photo.id" :photo="photo" />
+        </div>
+
+        <!-- Loading Placeholders for Search -->
+        <div v-if="loading && query"
+            class="w-full grid grid-cols-3 gap-16 2xl:px-56 ld:px-28 md:px-16 px-6 relative -top-20">
+            <div v-for="index in 9" :key="index" class="bg-gray-200 rounded-lg h-80 animate-pulse"></div>
         </div>
 
         <!-- No Results -->
-        <div v-if="!loading && photos?.length === 0" class="text-center">
+        <div v-if="!loading && photos.length === 0" class="text-center">
             <p>No results found.</p>
         </div>
     </section>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
-import { useImageStore } from '~/stores/imageStore'; // Ensure the path is correct
+import { onMounted, ref, watch } from 'vue';
+import { useImageStore } from '~/stores/imageStore';
 import ImageCard from '@/components/ImageCard.vue';
 
 const store = useImageStore();
 const query = ref('');
+const searchPlaceholder = ref('Search for photos');
 
-// Search function to fetch photos based on query
+// Fetch random photos on page load
+onMounted(async () => {
+    await store.fetchRandomPhotos();
+});
+
+// Search Photos
 const searchPhotos = async () => {
+    if (query.value.trim() === '') {
+        return; // Don't search if the query is empty
+    }
+    searchPlaceholder.value = `Showing results for "${query.value}"`;
     await store.searchImages(query.value);
+    console.log('Search Results:', store.photos); // Log the search results for debugging
 };
 
-// Fetch default photos on page load
-onMounted(async () => {
-    await store.fetchImages('latest');
+// Watch for changes in photos and log them
+watch(() => store.photos, (newPhotos) => {
+    console.log('Updated Photos:', newPhotos);
 });
 
 // Destructure state from the store
-const { photos, loading, error } = store;
+const loading = computed(() => store.loading);
+const error = computed(() => store.error);
+const photos = computed(() => store.photos);
 </script>
-
-<style scoped>
-/* You can add additional styles here if needed */
-</style>

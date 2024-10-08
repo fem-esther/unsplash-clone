@@ -8,24 +8,30 @@ export const useImageStore = defineStore('image', {
         error: null,
     }),
     actions: {
-        async fetchImages(query = 'latest') {
+        async fetchRandomPhotos() {
             this.loading = true;
             this.error = null;
             try {
                 const accessKey = 'GqpnE0gOEvUdGysV307oTyOH7Huca-KpNjDyELdTm40'; // Add your access key here
-                const response = await axios.get(`https://api.unsplash.com/photos/${query}`, {
+                const response = await axios.get(`https://api.unsplash.com/photos/random`, {
                     headers: {
                         Authorization: `Client-ID ${accessKey}`,
                     },
+                    params: { count: 9 },
                 });
 
-                // Map the response to the format you need
+                console.log(response);
+
+
                 this.photos = response.data.map(photo => ({
                     id: photo.id,
                     url: photo.urls.small,
                     name: photo.user.name,
-                    location: photo.user.location || 'Unknown Location', // Handle if location is not provided
+                    location: photo.user.location || 'Unknown Location',
                 }));
+
+                console.log(this.photos);
+
             } catch (error) {
                 this.error = 'Failed to fetch images. Please try again later.';
                 console.error(error);
@@ -34,11 +40,10 @@ export const useImageStore = defineStore('image', {
             }
         },
         async searchImages(query) {
-            // You can use the search endpoint for queries
             this.loading = true;
             this.error = null;
             try {
-                const accessKey = 'YOUR_UNSPLASH_ACCESS_KEY'; // Add your access key here
+                const accessKey = 'GqpnE0gOEvUdGysV307oTyOH7Huca-KpNjDyELdTm40'; // Add your access key here
                 const response = await axios.get(`https://api.unsplash.com/search/photos`, {
                     params: { query },
                     headers: {
@@ -46,7 +51,6 @@ export const useImageStore = defineStore('image', {
                     },
                 });
 
-                // Map the response to the format you need
                 this.photos = response.data.results.map(photo => ({
                     id: photo.id,
                     url: photo.urls.small,
